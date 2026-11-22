@@ -37,12 +37,23 @@ jobs:
       - name: Fetch original Mutable Instruments Plaits and Rings DSP
         run: bash scripts/fetch-mutable.sh
 
-      - name: Build debug APK
-        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Build independently installable debug APK
+        run: gradle --no-daemon --stacktrace -Pxy8RunNumber="$GITHUB_RUN_NUMBER" :app:assembleDebug
+
+      - name: Give the APK a unique filename
+        shell: bash
+        run: |
+          set -euo pipefail
+          short_sha="${GITHUB_SHA:0:8}"
+          filename="XY8-Plaits-Rings-Android15-run${GITHUB_RUN_NUMBER}-${short_sha}.apk"
+          mv app/build/outputs/apk/debug/app-debug.apk "app/build/outputs/apk/debug/$filename"
+          echo "XY8_APK_FILENAME=$filename" >> "$GITHUB_ENV"
+          echo "Package: com.oll.xy8.run${GITHUB_RUN_NUMBER}"
+          echo "APK: $filename"
 
       - name: Upload APK
         uses: actions/upload-artifact@v5
         with:
-          name: XY8-Plaits-Rings-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: XY8-Plaits-Rings-Android15-run${{ github.run_number }}
+          path: app/build/outputs/apk/debug/${{ env.XY8_APK_FILENAME }}
           if-no-files-found: error

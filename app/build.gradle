@@ -2,6 +2,15 @@ plugins {
     id 'com.android.application'
 }
 
+// A GitHub Actions run creates an independently installable test build.
+// Local Android Studio/Gradle builds retain the regular package identity.
+def xy8BuildNumber = (project.findProperty('xy8RunNumber') ?: '0').toString()
+if (!(xy8BuildNumber ==~ /[0-9]+/)) {
+    throw new GradleException('xy8RunNumber must be a non-negative integer')
+}
+def xy8TestBuild = xy8BuildNumber != '0'
+def xy8BuildVersionCode = 3 + xy8BuildNumber.toInteger()
+
 android {
     namespace 'com.oll.xy8'
     compileSdk 35
@@ -10,8 +19,12 @@ android {
         applicationId 'com.oll.xy8'
         minSdk 26
         targetSdk 35
-        versionCode 3
-        versionName '0.3.0-android15'
+        versionCode xy8BuildVersionCode
+        versionName xy8TestBuild ? "0.3.1-run${xy8BuildNumber}" : '0.3.1-android15'
+        manifestPlaceholders = [xy8AppLabel: xy8TestBuild ? "XY8 Test ${xy8BuildNumber}" : 'XY8 Recorder']
+        if (xy8TestBuild) {
+            applicationIdSuffix ".run${xy8BuildNumber}"
+        }
         ndk {
             abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64'
         }

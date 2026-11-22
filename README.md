@@ -49,3 +49,23 @@ Plaits, Rings and stmlib software copyright Émilie Gillet and contributors; MIT
 - Android cloud backup is disabled for this build (`android:allowBackup="false"`). Export project JSON manually if you want to transfer saved sessions. On some devices, device-to-device transfer behavior can differ.
 - APKs from GitHub Actions are **debug builds**, not signed production releases. Builds created on different runners may use different debug signing keys; if an APK won't update an earlier debug install, export your projects first, then uninstall the old version and install the new one.
 - Installation and on-device testing are still required to verify performance, MIDI availability, orientation, and fullscreen cutout handling on your particular phone.
+
+## Unique GitHub test builds (v0.3.1)
+
+Each GitHub Actions run names the APK with its run number and source commit, for example:
+`XY8-Plaits-Rings-Android15-run12-abcdef12.apk`.
+The downloadable artifact is also named `XY8-Plaits-Rings-Android15-run12`.
+
+Each run uses an **independent debug app identity**, `com.oll.xy8.run12`,
+and the launcher label `XY8 Test 12`. This lets you install multiple test versions
+side by side without accidentally replacing a previous version or encountering a
+different debug signing certificate. Old test copies remain installed until manually
+uninstalled. Each has separate app data and presets. Export a project as JSON to
+move it between versions. Ordinary local Gradle builds without `xy8RunNumber`
+use the standard `com.oll.xy8` identity.
+
+**A distinct filename or app ID does not fix an application crash.**
+If a fresh test build still exits immediately, collect the Android crash log
+(especially `FATAL EXCEPTION`, `AndroidRuntime`, or `Fatal signal`)
+so we can identify whether the fault is in Java startup or the Plaits/Rings
+native audio library. These are developer debug builds, not production releases.
