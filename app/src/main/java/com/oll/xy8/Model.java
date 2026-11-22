@@ -31,7 +31,7 @@ final class Model {
     static class Point {
         float x,y;
         Point(float x,float y){this.x=clamp(x,0,1);this.y=clamp(y,0,1);}
-        JSONArray json(){JSONArray a=new JSONArray();a.put(x);a.put(y);return a;}
+        JSONArray json(){JSONArray a=new JSONArray();a.put(Float.valueOf(x));a.put(Float.valueOf(y));return a;}
     }
     static class Event {
         static final int OFF=0,ON=1,Y=2;
