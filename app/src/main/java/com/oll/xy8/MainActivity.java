@@ -45,9 +45,13 @@ public class MainActivity extends Activity implements MidiIO.Listener {
     // legacy system UI flags only on older devices (minimum supported API 26).
     private void applyImmersiveLandscape(){
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        // Android 15: the Window's DecorView may not exist until setContentView.
+        // Using Window.getInsetsController() before that point crashes on launch.
+        final View decor=getWindow().getDecorView();
+        if(decor==null)return;
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.R){
             getWindow().setDecorFitsSystemWindows(false);
-            WindowInsetsController controller=getWindow().getInsetsController();
+            WindowInsetsController controller=decor.getWindowInsetsController();
             if(controller!=null){
                 controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
                 controller.hide(WindowInsets.Type.systemBars());
@@ -69,7 +73,7 @@ public class MainActivity extends Activity implements MidiIO.Listener {
     @Override protected void onCreate(Bundle saved){
         super.onCreate(saved);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        applyImmersiveLandscape();
+        // Do not request insets here: there is no content/decor window yet.
         prefs=getSharedPreferences("xy8",MODE_PRIVATE);
         synth=new Synth();
         midi=new MidiIO(this,this);
@@ -78,6 +82,9 @@ public class MainActivity extends Activity implements MidiIO.Listener {
         catch(Exception e){toast("Could not restore session");}
         view=new PerformanceView(this,engine);
         setContentView(view);
+        // DecorView now exists. onWindowFocusChanged reapplies the
+        // immersive flags once the view becomes attached to the window.
+        applyImmersiveLandscape();
         timer=Executors.newSingleThreadScheduledExecutor(r->{Thread t=new Thread(r,"XY8-clock");t.setDaemon(true);return t;});
         timer.scheduleAtFixedRate(()->{
             synchronized(engine){engine.tick();}
