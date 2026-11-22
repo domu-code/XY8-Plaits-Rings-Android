@@ -6,7 +6,7 @@
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:label="XY8 Recorder"
         android:usesCleartextTraffic="false"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:supportsRtl="true">
         <activity android:name=".MainActivity"
             android:screenOrientation="landscape"

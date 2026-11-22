@@ -4,11 +4,14 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Build;
 import android.provider.DocumentsContract;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.view.WindowManager;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.content.Context;
@@ -38,11 +41,35 @@ public class MainActivity extends Activity implements MidiIO.Listener {
     private ScheduledExecutorService timer;
     private SharedPreferences prefs;
     private long lastAutosave=0;
+    // Android 11+ uses WindowInsetsController for immersive mode. Keep the
+    // legacy system UI flags only on older devices (minimum supported API 26).
+    private void applyImmersiveLandscape(){
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.R){
+            getWindow().setDecorFitsSystemWindows(false);
+            WindowInsetsController controller=getWindow().getInsetsController();
+            if(controller!=null){
+                controller.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                controller.hide(WindowInsets.Type.systemBars());
+            }
+        }else{
+            getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        }
+    }
+    @Override public void onWindowFocusChanged(boolean hasFocus){
+        super.onWindowFocusChanged(hasFocus);
+        if(hasFocus)applyImmersiveLandscape();
+    }
     @Override protected void onCreate(Bundle saved){
         super.onCreate(saved);
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        getWindow().getDecorView().setSystemUiVisibility(5894|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        applyImmersiveLandscape();
         prefs=getSharedPreferences("xy8",MODE_PRIVATE);
         synth=new Synth();
         midi=new MidiIO(this,this);

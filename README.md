@@ -40,3 +40,12 @@ Plaits, Rings and stmlib software copyright Émilie Gillet and contributors; MIT
 - `app/src/main/cpp/CMakeLists.txt`: external C++ source compilation.
 - `scripts/fetch-mutable.sh`: pinned Mutable Instruments fetch.
 - `.github/workflows/build-apk.yml`: GitHub APK build.
+
+## Android 15 privacy and display compatibility (v0.3.0)
+
+- `compileSdk 35`, `targetSdk 35`; `minSdk 26` remains so older supported Android devices can still install the app. Targeting API 35 removes the deliberate Android 9 compatibility target.
+- Screen orientation remains **landscape**. Immersive fullscreen uses `WindowInsetsController` on Android 11+, and the XY touch canvas reserves camera-cutout safe areas in landscape.
+- The manifest declares **no** Internet, camera, microphone, contacts, or broad-storage permissions. Project JSON import/export continues through Android's user-controlled document picker.
+- Android cloud backup is disabled for this build (`android:allowBackup="false"`). Export project JSON manually if you want to transfer saved sessions. On some devices, device-to-device transfer behavior can differ.
+- APKs from GitHub Actions are **debug builds**, not signed production releases. Builds created on different runners may use different debug signing keys; if an APK won't update an earlier debug install, export your projects first, then uninstall the old version and install the new one.
+- Installation and on-device testing are still required to verify performance, MIDI availability, orientation, and fullscreen cutout handling on your particular phone.

@@ -9,6 +9,8 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.DisplayCutout;
+import android.os.Build;
 import java.util.ArrayList;
 
 final class PerformanceView extends View {
@@ -20,6 +22,7 @@ final class PerformanceView extends View {
     private final ArrayList<Hit> hits=new ArrayList<>();
     private final float density;
     private float ww,hh,padX,padY,padW,padH,panelX,panelW,footer;
+    private int safeLeft=0,safeTop=0,safeRight=0,safeBottom=0;
     private boolean onPad=false;
     private int finger=-1;
     private static final class Hit {
@@ -30,12 +33,29 @@ final class PerformanceView extends View {
         super(ctx);activity=(MainActivity)ctx;this.engine=engine;
         density=getResources().getDisplayMetrics().density;
         setLayerType(View.LAYER_TYPE_SOFTWARE,null);
+        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.P){
+            setOnApplyWindowInsetsListener((v,insets)->{
+                DisplayCutout cutout=insets.getDisplayCutout();
+                int l=cutout==null?0:cutout.getSafeInsetLeft();
+                int t=cutout==null?0:cutout.getSafeInsetTop();
+                int r=cutout==null?0:cutout.getSafeInsetRight();
+                int b=cutout==null?0:cutout.getSafeInsetBottom();
+                if(safeLeft!=l||safeTop!=t||safeRight!=r||safeBottom!=b){
+                    safeLeft=l;safeTop=t;safeRight=r;safeBottom=b;
+                    invalidate();
+                }
+                return insets;
+            });
+        }
     }
     @Override protected void onDraw(Canvas raw){
         super.onDraw(raw);
         raw.drawColor(BG);
-        raw.save();raw.scale(density,density);
-        ww=getWidth()/density;hh=getHeight()/density;
+        // Do not place controls under a camera cutout in landscape.
+        // Translation is in pixels; the remaining layout is in dp units.
+        raw.save();raw.translate(safeLeft,safeTop);raw.scale(density,density);
+        ww=Math.max(1,getWidth()-safeLeft-safeRight)/density;
+        hh=Math.max(1,getHeight()-safeTop-safeBottom)/density;
         hits.clear();
         footer=Math.max(51,Math.min(58,hh*0.15f));
         float header=51;
@@ -218,7 +238,7 @@ final class PerformanceView extends View {
         int act=e.getActionMasked();
         if(act==MotionEvent.ACTION_DOWN){
             finger=e.getPointerId(0);
-            float x=e.getX()/density,y=e.getY()/density;
+            float x=(e.getX()-safeLeft)/density,y=(e.getY()-safeTop)/density;
             for(int i=hits.size()-1;i>=0;i--){
                 Hit hit=hits.get(i);
                 if(hit.r.contains(x,y)){
@@ -234,7 +254,7 @@ final class PerformanceView extends View {
         }
         if(act==MotionEvent.ACTION_MOVE&&onPad){
             int idx=e.findPointerIndex(finger);if(idx<0)idx=0;
-            float x=e.getX(idx)/density,y=e.getY(idx)/density;
+            float x=(e.getX(idx)-safeLeft)/density,y=(e.getY(idx)-safeTop)/density;
             synchronized(engine){engine.touchMove((x-padX)/padW,engine.bank==Model.CC?(y-padY)/padH:1-(y-padY)/padH);}
             invalidate();return true;
         }
