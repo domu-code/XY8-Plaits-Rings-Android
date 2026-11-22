@@ -15,9 +15,11 @@ add_library(xy8dsp SHARED
     "${MI}/plaits/resources.cc"
     "${MI}/rings/resources.cc"
     ${PLAITS_DSP} ${RINGS_DSP} ${STMLIB_DSP} ${STMLIB_UTILS})
-# Plaits firmware user-data manager normally reads STM32 flash at a fixed address.
-# Enable upstream's TEST-only flash stub for voice.cc on Android.
-set_source_files_properties("${MI}/plaits/dsp/voice.cc" PROPERTIES COMPILE_DEFINITIONS TEST)
+# Upstream stmlib provides portable alternatives to ARMv7-only inline assembly
+# (ssat/usat/vsqrt) when TEST is defined. Apply to every native translation unit,
+# including Plaits, Rings, stmlib and our JNI bridge for ABI consistency.
+# It also selects Plaits' non-STM32 flash stub.
+target_compile_definitions(xy8dsp PRIVATE TEST)
 target_include_directories(xy8dsp PRIVATE "${MI}")
 target_compile_options(xy8dsp PRIVATE -O3 -fno-strict-aliasing -Wno-unused-variable -Wno-unused-function)
 find_library(log-lib log)
