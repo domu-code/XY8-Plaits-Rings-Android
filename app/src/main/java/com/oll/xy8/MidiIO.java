@@ -3,8 +3,8 @@ package com.oll.xy8;
 import android.content.Context;
 import android.media.midi.MidiDevice;
 import android.media.midi.MidiDeviceInfo;
-import android.media.midi.MidiDeviceInputPort;
-import android.media.midi.MidiDeviceOutputPort;
+import android.media.midi.MidiInputPort;
+import android.media.midi.MidiOutputPort;
 import android.media.midi.MidiManager;
 import android.media.midi.MidiReceiver;
 import android.os.Handler;
@@ -23,8 +23,8 @@ final class MidiIO {
     private final Listener listener;
     private final Handler handler=new Handler(Looper.getMainLooper());
     private MidiDevice outDevice,inDevice;
-    private MidiDeviceInputPort outPort;
-    private MidiDeviceOutputPort inPort;
+    private MidiInputPort outPort;
+    private MidiOutputPort inPort;
     private String outputName="None",inputName="None";
     MidiIO(Context context,Listener listener){
         this.listener=listener;
@@ -51,7 +51,7 @@ final class MidiIO {
         if(endpoint==null){listener.notice("MIDI output: None");return;}
         manager.openDevice(endpoint.info,device->{
             if(device==null){listener.notice("Could not open MIDI output");return;}
-            MidiDeviceInputPort port=device.openInputPort(endpoint.port);
+            MidiInputPort port=device.openInputPort(endpoint.port);
             if(port==null){try{device.close();}catch(IOException ignored){}listener.notice("MIDI output port unavailable");return;}
             synchronized(this){outDevice=device;outPort=port;outputName=endpoint.name;}
             listener.notice("MIDI OUT: "+endpoint.name);
@@ -62,7 +62,7 @@ final class MidiIO {
         if(endpoint==null){listener.notice("MIDI input: None");return;}
         manager.openDevice(endpoint.info,device->{
             if(device==null){listener.notice("Could not open MIDI input");return;}
-            MidiDeviceOutputPort port=device.openOutputPort(endpoint.port);
+            MidiOutputPort port=device.openOutputPort(endpoint.port);
             if(port==null){try{device.close();}catch(IOException ignored){}listener.notice("MIDI input port unavailable");return;}
             port.connect(receiver);
             synchronized(this){inDevice=device;inPort=port;inputName=endpoint.name;}
